@@ -54,4 +54,4 @@ options:
                         Pattern offset on y-axis
 ```
 
-A "random" pattern is hardcoded into this program, which you can observe with `random` as the parameter for `-p PATTERM`. This sets 20% of the grid as alive.
+A "random" pattern is hardcoded into this program, which you can observe with `random` as the parameter for `-p PATTERN`. This sets 20% of the grid as alive.
