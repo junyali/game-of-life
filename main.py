@@ -3,16 +3,14 @@
 
 ## // Imports \\ ##
 import os
-from multiprocessing.managers import Value
-
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import sys
 sys.path.insert(1, "./patterns/")
 import importlib
 import pygame
 import numpy as np
+import time
 import timeit
-import math
 import argparse
 
 ## // CONSTANTS \\ ##
@@ -26,11 +24,34 @@ colour_cell_about_to_die = (0, 0, 0)
 
 class Simulation:
     def update(self):
+        next_grid = np.zeros((self.grid.shape[0], self.grid.shape[1]))
+
+        for row, column in np.ndindex(self.grid.shape):
+            num_alive = np.sum(self.grid[row - 1:row + 2, column - 1:column + 2]) - self.grid[row, column]
+
+            if self.grid[row, column] == 1 and num_alive < 2 or num_alive > 3:
+                colour = colour_cell_about_to_die
+                next_grid[row, column] = 0
+            elif (self.grid[row, column] == 1 and 2 <= num_alive <= 3) or (self.grid[row, column] == 0 and num_alive == 3):
+                next_grid[row, column] = 1
+                colour = colour_cell_alive
+
+            colour = colour if self.grid[row, column] == 1 else colour_grid
+
+            pygame.draw.rect(self.surface, colour_gridline, (column * self.cellsize, row * self.cellsize, self.cellsize, self.cellsize), 1)
+
+            pygame.draw.rect(self.surface, colour, (column * self.cellsize, row * self.cellsize, self.cellsize - 1, self.cellsize - 1))
+
+        return next_grid
+
+
 
     def run(self):
         pygame.init()
-        self.surface = pygame.display.setmode((self.gridsize * self.cellsize, self.gridsize * self.cellsize))
+        self.surface = pygame.display.set_mode((self.gridsize * self.cellsize, self.gridsize * self.cellsize))
         pygame.display.set_caption("Conway's Game of Life")
+
+        self.start_time = timeit.default_timer()
 
         while True:
             for event in pygame.event.get():
@@ -45,11 +66,9 @@ class Simulation:
             count_list = np.asarray((unique, counts))
 
             try:
-                dead = len(count_list[0])
-                if dead == 1:
+                if len(count_list[0]) == 1:
                     self.alive = 0
-                alive = len(count_list)
-                if alive == 2:
+                elif len(count_list) == 2:
                     self.alive = int(count_list[1][1])
                 else:
                     print("Could not count number of alive cells?")
@@ -59,6 +78,12 @@ class Simulation:
                 self.alive = -1
 
             self.surface.fill(colour_grid)
+            self.grid = self.update()
+            pygame.display.update()
+
+            pygame.display.set_caption("Game of Life [Time: {time} | Generation: {iteration} | Population: {alive}]".format(time=round(timeit.default_timer() - self.start_time, 1), iteration=self.iteration, alive=self.alive))
+
+            time.sleep(self.delay / 1000)
 
 
     def set_pattern(self):
@@ -101,6 +126,8 @@ class Simulation:
         self.start_time = 0
         self.iteration = 0
 
+        self.grid = None
+
 
 
 
@@ -108,17 +135,20 @@ def parsing():
     parser = argparse.ArgumentParser(description="Conway's Game of Life")
     parser.add_argument("-c", "--cellsize", type=int, help="Size of each cell (pixels)", default=8)
     parser.add_argument("-g", "--gridsize", type=int, help="Size of the simulation (cells)", default=100)
-    parser.add_argument("-d", "--delay", type=int, help="Animation delay between each generation", default=0)
-    parser.add_argument("-p", "--pattern", type=str, help="Pattern to use", default="glider.py")
+    parser.add_argument("-d", "--delay", type=int, help="Animation delay between each generation (milliseconds)", default=0)
+    parser.add_argument("-p", "--pattern", type=str, help="Pattern to use", default="random")
     parser.add_argument("-x", "--xoffset", type=int, help="Pattern offset on x-axis", default=0)
     parser.add_argument("-y", "--yoffset", type=int, help="Pattern offset on y-axis", default=0)
 
     args = parser.parse_args()
 
-    module = importlib.import_module(args.pattern.strip(".py"))
-    print(module.description)
+    return args
 
 if __name__ == '__main__':
-    parsing()
+    params = parsing()
+    Game = Simulation(params.cellsize, params.gridsize, params.delay, params.pattern, params.xoffset, params.yoffset)
+    Game.set_pattern()
+    Game.run()
+
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
