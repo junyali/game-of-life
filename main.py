@@ -119,7 +119,7 @@ class Simulation:
         self.cellsize = cellsize
         self.gridsize = gridize
         self.delay = delay
-        self.pattern = pattern.strip(".py")
+        self.pattern = pattern.replace(".py", "")
         self.xoffset = xoffset
         self.yoffset = yoffset
         self.grid = np.array([])
@@ -137,8 +137,8 @@ def parsing():
     parser.add_argument("-g", "--gridsize", type=int, help="Size of the simulation (cells)", default=100)
     parser.add_argument("-d", "--delay", type=int, help="Animation delay between each generation (milliseconds)", default=0)
     parser.add_argument("-p", "--pattern", type=str, help="Pattern to use", default="random")
-    parser.add_argument("-x", "--xoffset", type=int, help="Pattern offset on x-axis", default=0)
-    parser.add_argument("-y", "--yoffset", type=int, help="Pattern offset on y-axis", default=0)
+    parser.add_argument("-x", "--xoffset", type=int, help="Pattern offset on x-axis", default=8)
+    parser.add_argument("-y", "--yoffset", type=int, help="Pattern offset on y-axis", default=8)
 
     args = parser.parse_args()
 
